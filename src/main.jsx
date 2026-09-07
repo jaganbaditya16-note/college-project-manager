@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import {
   ArrowUpRight,
   Bell,
-  BookOpen,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -26,7 +24,7 @@ import {
   X,
 } from 'lucide-react';
 import './styles.css';
-import { supabase, supabaseConfigured } from './lib/supabase';
+import { supabaseConfigured } from './lib/supabase';
 
 const seedProjects = [
   { id: 'p1', title: 'Smart Lost & Found', code: 'IT-24-081', type: 'Major Project', progress: 78, accent: 'violet', members: 4, due: 'Oct 20', status: 'On track' },
@@ -71,8 +69,8 @@ function App() {
 
   function toast(message) {
     setNotice(message);
-    window.clearTimeout(window.__toast);
-    window.__toast = window.setTimeout(() => setNotice(''), 2600);
+    window.clearTimeout(window.__campusflowToast);
+    window.__campusflowToast = window.setTimeout(() => setNotice(''), 2600);
   }
 
   function addProject(title) {
@@ -98,12 +96,12 @@ function App() {
         </div>
         <div className="nav-label">Workspace</div>
         <nav>
-          {nav.map(([label, Icon]) => <button key={label} className={active === label ? 'nav-item active' : 'nav-item'} onClick={() => { setActive(label); setMobileOpen(false); }}><Icon size={18} /><span>{label}</span>{label === 'Tasks' && <em>4</em>}</button>)}
+          {nav.map(([label, Icon]) => <button key={label} className={active === label ? 'nav-item active' : 'nav-item'} onClick={() => { setActive(label); setMobileOpen(false); }}><Icon size={18} /><span>{label}</span>{label === 'Tasks' && <em>{tasks.filter((task) => !task.done).length}</em>}</button>)}
         </nav>
         <div className="side-spacer" />
-        <div className="ai-card"><div className="ai-orb"><Sparkles size={17} /></div><b>Project Copilot</b><p>Ask about deadlines, blockers or your next best task.</p><button onClick={() => toast('Copilot is ready — connect your AI key to enable live answers.')}>Open Copilot <ArrowUpRight size={15} /></button></div>
+        <div className="ai-card"><div className="ai-orb"><Sparkles size={17} /></div><b>Project Copilot</b><p>Ask about deadlines, blockers or your next best task.</p><button onClick={() => toast(supabaseConfigured ? 'Copilot is ready for an AI Edge Function.' : 'Copilot is UI-ready — add Supabase to enable protected AI calls.')}>Open Copilot <ArrowUpRight size={15} /></button></div>
         <button className="nav-item"><Settings size={18} /><span>Settings</span></button>
-        <div className="profile-mini"><div className="avatar">JB</div><div><b>Jagan Baditya</b><span>Student admin</span></div><MoreHorizontal size={17} /></div>
+        <div className="profile-mini"><div className="avatar">JB</div><div><b>Jagan Baditya</b><span>{supabaseConfigured ? 'Supabase-ready workspace' : 'Local demo workspace'}</span></div><MoreHorizontal size={17} /></div>
       </aside>
 
       <main className="main">
@@ -112,7 +110,7 @@ function App() {
           <div className="crumb"><span>{active}</span><span className="dot">/</span><b>My workspace</b></div>
           <div className="top-actions">
             <label className="search"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects, tasks…" /></label>
-            <button className="icon-btn" title="GitHub" onClick={() => toast('GitHub integration is ready for OAuth wiring.')}><Github size={18} /></button>
+            <button className="icon-btn" title="GitHub" onClick={() => toast('GitHub OAuth is the next integration layer.')}><Github size={18} /></button>
             <button className="icon-btn notif" title="Notifications" onClick={() => toast('No new notifications')}><Bell size={18} /><i /></button>
             <button className="new-btn" onClick={() => setShowProject(true)}><Plus size={17} /> New project</button>
           </div>
@@ -123,7 +121,7 @@ function App() {
           {active === 'Projects' && <Projects projects={visibleProjects} onAdd={() => setShowProject(true)} onOpen={(p) => toast(`${p.title} opened`)} />}
           {active === 'Tasks' && <Tasks tasks={tasks} onToggle={toggleTask} />}
           {active === 'Timeline' && <Timeline />}
-          {active === 'Team' && <Team />}
+          {active === 'Team' && <Team toast={toast} />}
           {active === 'Documents' && <Documents />}
           {active === 'Viva Lab' && <Viva toast={toast} />}
         </div>
@@ -158,7 +156,7 @@ function Overview({ projects, tasks, onAdd, onToggle, toast }) {
       <div className="panel focus-panel"><div className="panel-head"><div><div className="eyebrow">Next up</div><h3>Project health</h3></div><span className="health-badge">Healthy</span></div><div className="health-ring"><div><strong>82</strong><span>/100</span></div></div><div className="health-copy"><b>You're on track.</b><p>Documentation is the only area trending behind your code progress.</p></div><div className="mini-bars"><Bar label="Code" value={90} /><Bar label="Docs" value={64} /><Bar label="Testing" value={72} /><Bar label="Team" value={84} /></div></div>
     </section>
 
-    <section className="copilot-banner"><div className="banner-orb"><Sparkles /></div><div><div className="eyebrow">Project Copilot</div><h3>Turn your project chaos into your next three actions.</h3><p>Get a focused checklist from your project data instead of another generic productivity plan.</p></div><button className="new-btn" onClick={() => toast('Copilot is ready for AI API setup')}>Try Copilot <ArrowUpRight size={16} /></button></section>
+    <section className="copilot-banner"><div className="banner-orb"><Sparkles /></div><div><div className="eyebrow">Project Copilot</div><h3>Turn your project chaos into your next three actions.</h3><p>Get a focused checklist from your project data instead of another generic productivity plan.</p></div><button className="new-btn" onClick={() => toast('Copilot is ready for protected AI API setup')}>Try Copilot <ArrowUpRight size={16} /></button></section>
   </>;
 }
 
@@ -171,10 +169,10 @@ function Projects({ projects, onAdd, onOpen }) { return <><PageHead eyebrow="Wor
 function ProjectListRow({ p, onOpen }) { return <button className="project-list-row" onClick={onOpen}><div className={`list-icon ${p.accent}`}>{p.title.slice(0,1)}</div><div className="list-title"><b>{p.title}</b><span>{p.code} · {p.type}</span></div><div className="list-progress"><div className="bar"><i style={{ width: `${p.progress}%` }} /></div><span>{p.progress}%</span></div><span className="list-due">{p.due}</span><ChevronRight size={17} /></button>; }
 function Tasks({ tasks, onToggle }) { return <><PageHead eyebrow="Execution" title="Tasks" description="Keep the team moving one clear action at a time." /><div className="panel task-panel">{tasks.concat([{ id:'new', title:'Create user testing plan', project:'Smart Lost & Found', assignee:'JB', priority:'Medium', due:'Sep 17', done:false }]).map((t) => <TaskRow key={t.id} task={t} onToggle={() => t.id !== 'new' && onToggle(t.id)} />)}</div></>; }
 function Timeline() { return <><PageHead eyebrow="Schedule" title="Timeline" description="A single view of your academic project deadlines." /><div className="timeline-panel">{['Requirements', 'UI / UX', 'Backend', 'Integration', 'Testing', 'Documentation', 'Viva'].map((x, i) => <div className="timeline-row" key={x}><span className="date">Sep {10 + i * 5}</span><div className="timeline-line"><i /></div><div><b>{x}</b><p>{i < 3 ? 'Completed milestone' : i === 3 ? 'In progress' : 'Upcoming milestone'}</p></div><span className={`timeline-status s${i}`}>{i < 3 ? 'Done' : i === 3 ? 'Active' : 'Planned'}</span></div>)}</div></>; }
-function Team() { return <><PageHead eyebrow="People" title="Team" description="Roles, ownership and momentum without the spreadsheet chase." action="Invite member" onAction={() => window.alert('Invite flow can be connected to Supabase Auth.')} /><div className="team-grid">{seedMembers.map((m) => <div className="member-card" key={m.id}><div className="member-avatar">{m.initials}<i className={m.online ? 'online' : ''} /></div><h3>{m.name}</h3><p>{m.role}</p><span>Active this week</span></div>)}</div></>; }
+function Team({ toast }) { return <><PageHead eyebrow="People" title="Team" description="Roles, ownership and momentum without the spreadsheet chase." action="Invite member" onAction={() => toast('Invite flow can be connected to Supabase Auth.')} /><div className="team-grid">{seedMembers.map((m) => <div className="member-card" key={m.id}><div className="member-avatar">{m.initials}<i className={m.online ? 'online' : ''} /></div><h3>{m.name}</h3><p>{m.role}</p><span>Active this week</span></div>)}</div></>; }
 function Documents() { const docs = [['Project Abstract','2 pages','Updated today'],['Software Requirements Specification','14 pages','Updated yesterday'],['Database Schema','1 page','Updated Sep 03'],['Presentation Deck','18 slides','Updated Sep 01'],['Research References','28 sources','Updated Aug 28']]; return <><PageHead eyebrow="Project files" title="Documents" description="Your project evidence, report drafts and presentation materials." /><div className="doc-grid">{docs.map(([title, meta, updated]) => <div className="doc-card" key={title}><div className="doc-icon"><FileText size={19} /></div><h3>{title}</h3><p>{meta}</p><small>{updated}</small><button><ArrowUpRight size={15} /></button></div>)}</div></>; }
 function Viva({ toast }) { const questions = ['Why did you choose this technology stack?', 'What problem does your project solve?', 'How does your database maintain consistency?', 'What are the current limitations?', 'How would you scale this project?']; return <><PageHead eyebrow="Practice" title="Viva Lab" description="Practice the questions an examiner is likely to ask." action="Start mock viva" onAction={() => toast('Mock viva session created')} /><div className="viva-layout"><div className="viva-hero"><div className="banner-orb"><Sparkles /></div><div><h2>Ready when you are.</h2><p>Pick a difficulty and answer aloud. Your future self will thank you at the viva table.</p></div></div><div className="panel"><div className="panel-head"><h3>Question bank</h3><span className="muted">5 curated questions</span></div>{questions.map((q, i) => <div className="question" key={q}><span>0{i + 1}</span><b>{q}</b><ArrowUpRight size={16} /></div>)}</div></div></>; }
 function PageHead({ eyebrow, title, description, action, onAction }) { return <section className="page-head"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></div>{action && <button className="new-btn" onClick={onAction}><Plus size={17} /> {action}</button>}</section>; }
 function ProjectModal({ onClose, onCreate }) { const [title, setTitle] = useState(''); return <div className="modal-backdrop" onMouseDown={onClose}><div className="modal" onMouseDown={(e) => e.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">New workspace</div><h2>Create project</h2></div><button className="icon-btn" onClick={onClose}><X size={18} /></button></div><label>Project name<input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Smart Campus Assistant" /></label><label>Project type<select defaultValue="Major Project"><option>Major Project</option><option>Mini Project</option><option>Research</option><option>Hackathon</option></select></label><div className="modal-note"><Sparkles size={15} /> We'll create a clean workspace with milestones, tasks and a starter timeline.</div><button className="new-btn wide" disabled={!title.trim()} onClick={() => onCreate(title.trim())}>Create project <ArrowUpRight size={16} /></button></div></div>; }
 
-createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>);
+export default App;
